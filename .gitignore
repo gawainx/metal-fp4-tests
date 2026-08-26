@@ -1,2 +1,1 @@
-build/*
-!build/fp4_benchmark_*.json
+build/

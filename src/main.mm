@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -273,7 +274,10 @@ int main(int argc, const char *argv[]) {
       std::fprintf(stderr, "[fp4] Metal device unavailable\n");
       return 1;
     }
-    if (!output_path_specified) output_path = "build/fp4_benchmark_" + filenameComponent(device.name.UTF8String) + ".json";
+    if (!output_path_specified) {
+      std::filesystem::create_directories("results");
+      output_path = "results/fp4_benchmark_" + filenameComponent(device.name.UTF8String) + ".json";
+    }
     id<MTLCommandQueue> queue = [device newCommandQueue];
     NSError *library_error = nil;
     NSURL *library_url = [NSURL fileURLWithPath:@"build/fp4_kernels.metallib"];
