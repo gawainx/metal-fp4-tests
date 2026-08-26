@@ -97,8 +97,8 @@ static uint8_t encodeE2M1(float normalized) {
 }
 
 /** Converts FP32 weights into FP16 values, packed E2M1 nibbles, and one FP16 scale per 32 values. */
-static void quantizeWeights(const std::vector<float> &weights, uint32_t k, std::vector<uint16_t> &fp16_weights,
-                            std::vector<uint8_t> &packed_fp4, std::vector<uint16_t> &scales) {
+static void quantizeWeights(const std::vector<float> &weights, uint32_t k, std::vector<_Float16> &fp16_weights,
+                            std::vector<uint8_t> &packed_fp4, std::vector<_Float16> &scales) {
   fp16_weights.resize(weights.size());
   packed_fp4.assign((weights.size() + 1) / 2, 0);
   scales.resize(weights.size() / 32);
@@ -231,7 +231,8 @@ int main(int argc, const char *argv[]) {
     }
     id<MTLCommandQueue> queue = [device newCommandQueue];
     NSError *library_error = nil;
-    id<MTLLibrary> library = [device newLibraryWithFile:@"build/fp4_kernels.metallib" error:&library_error];
+    NSURL *library_url = [NSURL fileURLWithPath:@"build/fp4_kernels.metallib"];
+    id<MTLLibrary> library = [device newLibraryWithURL:library_url error:&library_error];
     if (library == nil) {
       std::fprintf(stderr, "[fp4] cannot load Metal library: %s\n", library_error.localizedDescription.UTF8String);
       return 1;
@@ -268,18 +269,18 @@ int main(int argc, const char *argv[]) {
       std::vector<float> weights(static_cast<size_t>(workload.n) * workload.k);
       for (float &value : activations) value = distribution(generator);
       for (float &value : weights) value = distribution(generator);
-      std::vector<uint16_t> fp16_activations(activations.size());
+      std::vector<_Float16> fp16_activations(activations.size());
       for (size_t index = 0; index < activations.size(); ++index) fp16_activations[index] = _Float16(activations[index]);
-      std::vector<uint16_t> fp16_weights;
+      std::vector<_Float16> fp16_weights;
       std::vector<uint8_t> packed_fp4;
-      std::vector<uint16_t> scales;
+      std::vector<_Float16> scales;
       quantizeWeights(weights, workload.k, fp16_weights, packed_fp4, scales);
       const std::vector<float> reference = cpuMatmul(activations, weights, workload);
       const MatmulParams params = {workload.m, workload.k, workload.n};
-      id<MTLBuffer> activation_buffer = [device newBufferWithBytes:fp16_activations.data() length:fp16_activations.size() * sizeof(uint16_t) options:MTLResourceStorageModeShared];
-      id<MTLBuffer> fp16_weight_buffer = [device newBufferWithBytes:fp16_weights.data() length:fp16_weights.size() * sizeof(uint16_t) options:MTLResourceStorageModeShared];
+      id<MTLBuffer> activation_buffer = [device newBufferWithBytes:fp16_activations.data() length:fp16_activations.size() * sizeof(_Float16) options:MTLResourceStorageModeShared];
+      id<MTLBuffer> fp16_weight_buffer = [device newBufferWithBytes:fp16_weights.data() length:fp16_weights.size() * sizeof(_Float16) options:MTLResourceStorageModeShared];
       id<MTLBuffer> fp4_weight_buffer = [device newBufferWithBytes:packed_fp4.data() length:packed_fp4.size() options:MTLResourceStorageModeShared];
-      id<MTLBuffer> scale_buffer = [device newBufferWithBytes:scales.data() length:scales.size() * sizeof(uint16_t) options:MTLResourceStorageModeShared];
+      id<MTLBuffer> scale_buffer = [device newBufferWithBytes:scales.data() length:scales.size() * sizeof(_Float16) options:MTLResourceStorageModeShared];
       id<MTLBuffer> fp16_output = [device newBufferWithLength:reference.size() * sizeof(float) options:MTLResourceStorageModeShared];
       id<MTLBuffer> fp4_output = [device newBufferWithLength:reference.size() * sizeof(float) options:MTLResourceStorageModeShared];
       id<MTLBuffer> fp16_params = [device newBufferWithBytes:&params length:sizeof(params) options:MTLResourceStorageModeShared];
