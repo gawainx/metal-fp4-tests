@@ -83,6 +83,17 @@ static std::string machineArchitecture() {
   return system_info.machine;
 }
 
+/** Converts a device name into a filename component while preserving its model words. */
+static std::string filenameComponent(const std::string &value) {
+  std::string component;
+  for (const char character : value) {
+    const bool is_ascii_letter = (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z');
+    const bool is_digit = character >= '0' && character <= '9';
+    component.push_back(is_ascii_letter || is_digit ? character : '_');
+  }
+  return component;
+}
+
 /** Parses a positive command-line integer and returns the fallback for invalid input. */
 static uint32_t parsePositive(const char *value, uint32_t fallback) {
   const long parsed = std::strtol(value, nullptr, 10);
@@ -241,13 +252,17 @@ static void writeReport(const std::string &path, const std::string &report) {
 /** Runs capability probing and Transformer-shaped FP4/FP16 benchmarks. */
 int main(int argc, const char *argv[]) {
   @autoreleasepool {
-    std::string output_path = "build/fp4_benchmark.json";
+    std::string output_path;
+    bool output_path_specified = false;
     std::string native_fp4_sdk = "unavailable";
     uint32_t iterations = 5;
     uint32_t hidden_size = 1024;
     for (int index = 1; index < argc; ++index) {
       const std::string argument = argv[index];
-      if (argument == "--output" && index + 1 < argc) output_path = argv[++index];
+      if (argument == "--output" && index + 1 < argc) {
+        output_path = argv[++index];
+        output_path_specified = true;
+      }
       if (argument == "--native-fp4-sdk" && index + 1 < argc) native_fp4_sdk = argv[++index];
       if (argument == "--iterations" && index + 1 < argc) iterations = parsePositive(argv[++index], iterations);
       if (argument == "--hidden-size" && index + 1 < argc) hidden_size = parsePositive(argv[++index], hidden_size);
@@ -258,6 +273,7 @@ int main(int argc, const char *argv[]) {
       std::fprintf(stderr, "[fp4] Metal device unavailable\n");
       return 1;
     }
+    if (!output_path_specified) output_path = "build/fp4_benchmark_" + filenameComponent(device.name.UTF8String) + ".json";
     id<MTLCommandQueue> queue = [device newCommandQueue];
     NSError *library_error = nil;
     NSURL *library_url = [NSURL fileURLWithPath:@"build/fp4_kernels.metallib"];

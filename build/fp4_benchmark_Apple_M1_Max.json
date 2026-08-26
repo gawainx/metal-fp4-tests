@@ -1,0 +1,16 @@
+{
+  "environment": {
+    "device": "Apple M1 Max",
+    "architecture": "arm64",
+    "os_version": "Version 26.5.1 (Build 25F80)",
+    "apple_gpu_family_7_or_later": true,
+    "native_fp4_tensor_api_in_active_sdk": false,
+    "native_fp4_status": "active SDK lacks MTLTensorDataTypeMetalFloat4E2M1"
+  },
+  "implementation": "software_fallback_packed_e2m1_block32_with_fp16_activations",
+  "workloads": [
+    {"name": "prefill_linear", "m": 128, "k": 1024, "n": 1024, "fp16": {"mean_gpu_ms": 7.488750, "min_gpu_ms": 6.901958, "p50_gpu_ms": 6.933875, "p95_gpu_ms": 8.364542, "max_gpu_ms": 8.364542, "mean_wall_ms": 7.896125, "tflops": 0.035845, "max_abs_error": 0.002877, "rmse": 0.000591, "cosine_similarity": 1.000000}, "fp4_e2m1_block32": {"mean_gpu_ms": 12.546833, "min_gpu_ms": 12.382625, "p50_gpu_ms": 12.576500, "p95_gpu_ms": 12.698875, "max_gpu_ms": 12.698875, "mean_wall_ms": 12.856041, "tflops": 0.021395, "max_abs_error": 0.897151, "rmse": 0.203082, "cosine_similarity": 0.994876}, "fp4_vs_fp16_speedup": 0.596864},
+    {"name": "decode_linear", "m": 1, "k": 1024, "n": 1024, "fp16": {"mean_gpu_ms": 0.368525, "min_gpu_ms": 0.368042, "p50_gpu_ms": 0.368375, "p95_gpu_ms": 0.369125, "max_gpu_ms": 0.369125, "mean_wall_ms": 0.549475, "tflops": 0.005691, "max_abs_error": 0.002104, "rmse": 0.000610, "cosine_similarity": 1.000000}, "fp4_e2m1_block32": {"mean_gpu_ms": 0.733533, "min_gpu_ms": 0.562417, "p50_gpu_ms": 0.746500, "p95_gpu_ms": 0.863875, "max_gpu_ms": 0.863875, "mean_wall_ms": 0.935725, "tflops": 0.002859, "max_abs_error": 0.835859, "rmse": 0.221292, "cosine_similarity": 0.994697}, "fp4_vs_fp16_speedup": 0.502397},
+    {"name": "qkv_projection", "m": 32, "k": 1024, "n": 3072, "fp16": {"mean_gpu_ms": 6.441300, "min_gpu_ms": 5.398042, "p50_gpu_ms": 5.498250, "p95_gpu_ms": 8.857250, "max_gpu_ms": 8.857250, "mean_wall_ms": 6.699975, "tflops": 0.031256, "max_abs_error": 0.003113, "rmse": 0.000586, "cosine_similarity": 1.000000}, "fp4_e2m1_block32": {"mean_gpu_ms": 10.374242, "min_gpu_ms": 10.354875, "p50_gpu_ms": 10.367250, "p95_gpu_ms": 10.411125, "max_gpu_ms": 10.411125, "mean_wall_ms": 10.660983, "tflops": 0.019406, "max_abs_error": 0.865332, "rmse": 0.201626, "cosine_similarity": 0.994888}, "fp4_vs_fp16_speedup": 0.620894}
+  ]
+}
