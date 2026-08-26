@@ -34,6 +34,16 @@ struct Measurement {
   std::string representation;
   /** Mean GPU execution time over measured iterations. */
   double mean_ms = 0.0;
+  /** Fastest measured GPU execution time. */
+  double min_ms = 0.0;
+  /** Median measured GPU execution time. */
+  double p50_ms = 0.0;
+  /** 95th percentile measured GPU execution time. */
+  double p95_ms = 0.0;
+  /** Slowest measured GPU execution time. */
+  double max_ms = 0.0;
+  /** Mean CPU wall-clock time from command submission through completion. */
+  double mean_wall_ms = 0.0;
   /** Logical dense-matmul throughput. */
   double tflops = 0.0;
   /** Largest absolute difference from the FP32 CPU reference. */
@@ -159,6 +169,12 @@ static void calculateError(Measurement &measurement, const std::vector<float> &a
   measurement.cosine_similarity = dot_product / std::sqrt(actual_norm * reference_norm);
 }
 
+/** Returns the nearest-rank percentile from a nonempty, sorted duration sample. */
+static double percentile(const std::vector<double> &sorted_samples, double fraction) {
+  const size_t rank = static_cast<size_t>(std::ceil(fraction * sorted_samples.size()));
+  return sorted_samples[std::max<size_t>(1, rank) - 1];
+}
+
 /** Executes a Metal pipeline, measures GPU time, reads results, and validates them against the reference. */
 static Measurement runPipeline(id<MTLCommandQueue> queue, id<MTLComputePipelineState> pipeline,
                                const std::vector<id<MTLBuffer>> &buffers, uint32_t params_index,
@@ -168,7 +184,9 @@ static Measurement runPipeline(id<MTLCommandQueue> queue, id<MTLComputePipelineS
   (void)params_index;
   measurement.representation = representation;
   std::vector<double> elapsed_ms;
+  std::vector<double> wall_ms;
   for (uint32_t iteration = 0; iteration < iterations + 1; ++iteration) {
+    const auto start = std::chrono::steady_clock::now();
     id<MTLCommandBuffer> command_buffer = [queue commandBuffer];
     id<MTLComputeCommandEncoder> encoder = [command_buffer computeCommandEncoder];
     [encoder setComputePipelineState:pipeline];
@@ -181,18 +199,29 @@ static Measurement runPipeline(id<MTLCommandQueue> queue, id<MTLComputePipelineS
     [encoder endEncoding];
     [command_buffer commit];
     [command_buffer waitUntilCompleted];
+    const double elapsed_wall_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
     if (command_buffer.status != MTLCommandBufferStatusCompleted) {
       std::fprintf(stderr, "[fp4] GPU command failed: %s\n", command_buffer.error.localizedDescription.UTF8String);
       std::exit(3);
     }
     if (iteration > 0) {
       elapsed_ms.push_back((command_buffer.GPUEndTime - command_buffer.GPUStartTime) * 1000.0);
+      wall_ms.push_back(elapsed_wall_ms);
     }
   }
   for (const double elapsed : elapsed_ms) {
     measurement.mean_ms += elapsed;
   }
   measurement.mean_ms /= elapsed_ms.size();
+  for (const double elapsed : wall_ms) {
+    measurement.mean_wall_ms += elapsed;
+  }
+  measurement.mean_wall_ms /= wall_ms.size();
+  std::sort(elapsed_ms.begin(), elapsed_ms.end());
+  measurement.min_ms = elapsed_ms.front();
+  measurement.p50_ms = percentile(elapsed_ms, 0.50);
+  measurement.p95_ms = percentile(elapsed_ms, 0.95);
+  measurement.max_ms = elapsed_ms.back();
   measurement.tflops = (2.0 * workload.m * workload.k * workload.n) / (measurement.mean_ms * 1.0e9);
   id<MTLBuffer> output_buffer = buffers[representation == "fp16" ? 2 : 3];
   std::vector<float> output(reference.size());
@@ -288,10 +317,10 @@ int main(int argc, const char *argv[]) {
       const Measurement fp16 = runPipeline(queue, fp16_pipeline, {activation_buffer, fp16_weight_buffer, fp16_output, fp16_params}, 3, workload, "fp16", reference, iterations);
       const Measurement fp4 = runPipeline(queue, fp4_pipeline, {activation_buffer, fp4_weight_buffer, scale_buffer, fp4_output, fp4_params}, 4, workload, "fp4_e2m1_block32", reference, iterations);
       const double speedup = fp16.mean_ms / fp4.mean_ms;
-      std::printf("[fp4] %-16s fp16=%8.3f ms fp4=%8.3f ms speedup=%6.3fx fp4_rmse=%0.6f\n", workload.name.c_str(), fp16.mean_ms, fp4.mean_ms, speedup, fp4.rmse);
+      std::printf("[fp4] %-16s fp16 gpu(avg/p50/p95)=%7.3f/%7.3f/%7.3f ms wall=%7.3f ms | fp4 gpu(avg/p50/p95)=%7.3f/%7.3f/%7.3f ms wall=%7.3f ms speedup=%5.3fx\n", workload.name.c_str(), fp16.mean_ms, fp16.p50_ms, fp16.p95_ms, fp16.mean_wall_ms, fp4.mean_ms, fp4.p50_ms, fp4.p95_ms, fp4.mean_wall_ms, speedup);
       report << "    {\"name\": \"" << workload.name << "\", \"m\": " << workload.m << ", \"k\": " << workload.k << ", \"n\": " << workload.n
-             << ", \"fp16\": {\"mean_gpu_ms\": " << fp16.mean_ms << ", \"tflops\": " << fp16.tflops << ", \"max_abs_error\": " << fp16.max_abs_error << ", \"rmse\": " << fp16.rmse << ", \"cosine_similarity\": " << fp16.cosine_similarity << "}"
-             << ", \"fp4_e2m1_block32\": {\"mean_gpu_ms\": " << fp4.mean_ms << ", \"tflops\": " << fp4.tflops << ", \"max_abs_error\": " << fp4.max_abs_error << ", \"rmse\": " << fp4.rmse << ", \"cosine_similarity\": " << fp4.cosine_similarity << "}"
+             << ", \"fp16\": {\"mean_gpu_ms\": " << fp16.mean_ms << ", \"min_gpu_ms\": " << fp16.min_ms << ", \"p50_gpu_ms\": " << fp16.p50_ms << ", \"p95_gpu_ms\": " << fp16.p95_ms << ", \"max_gpu_ms\": " << fp16.max_ms << ", \"mean_wall_ms\": " << fp16.mean_wall_ms << ", \"tflops\": " << fp16.tflops << ", \"max_abs_error\": " << fp16.max_abs_error << ", \"rmse\": " << fp16.rmse << ", \"cosine_similarity\": " << fp16.cosine_similarity << "}"
+             << ", \"fp4_e2m1_block32\": {\"mean_gpu_ms\": " << fp4.mean_ms << ", \"min_gpu_ms\": " << fp4.min_ms << ", \"p50_gpu_ms\": " << fp4.p50_ms << ", \"p95_gpu_ms\": " << fp4.p95_ms << ", \"max_gpu_ms\": " << fp4.max_ms << ", \"mean_wall_ms\": " << fp4.mean_wall_ms << ", \"tflops\": " << fp4.tflops << ", \"max_abs_error\": " << fp4.max_abs_error << ", \"rmse\": " << fp4.rmse << ", \"cosine_similarity\": " << fp4.cosine_similarity << "}"
              << ", \"fp4_vs_fp16_speedup\": " << speedup << "}" << (workload_index + 1 == workloads.size() ? "\n" : ",\n");
     }
     report << "  ]\n}\n";
