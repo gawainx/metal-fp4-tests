@@ -14,7 +14,11 @@ cd metal-fp4-compare-macos27-arm64
 
 ## 从源码运行
 
-需要 macOS 27、Apple Silicon 和完整 Xcode。在仓库根目录运行：
+需要 macOS 27、Apple Silicon 和完整 Xcode。
+
+第一步，执行 `xcodebuild -downloadComponent MetalToolchain` 下载完整 Metal toolchain
+
+第二步，在仓库根目录运行：
 
 ```sh
 make compare
