@@ -6,4 +6,10 @@
 
 负载包括 prefill 线性层、单 token decode 线性层和 QKV 投影。FP4 使用 E2M1 的有限数值编码，权重按输出通道分块量化。FP16 和 FP4 使用同一份标量 Metal 矩阵乘法结构，结果用于衡量打包解码开销与量化误差。
 
-`scripts/detect_native_fp4_api.sh` 会对当前 Xcode SDK 编译 `MTLTensorDataTypeMetalFloat4E2M1` 探针。API 出现时，JSON 会记录该状态；当前软件回退内核仍保持独立，以确保旧 SDK 与所有 M 系列机器能够得到可复现结果。
+`scripts/detect_native_fp4_api.sh` 会对当前 Xcode SDK 编译 `MTLTensorDataTypeMetalFloat4E2M1` 探针。探针仅表示 SDK 是否声明此类型，不表示 GPU 支持或运行了原生 FP4。当前程序始终执行逐元素解码的标量 Metal 内核；JSON 中的 `execution_backend` 明确记录为 `software_scalar_decode`。因此这些结果可用于比较本项目软件内核的运行时间和量化误差，不能作为原生 FP4 tensor 性能或芯片 FP4 硬件性能的结论。探针环境出错时脚本会报错退出，不再把编译环境故障记成 API 不可用。
+
+## 验证原生 FP4
+
+在 macOS 27、包含 Metal 4.1 的 Xcode SDK 和支持相应 TensorOps 的 GPU 上，运行 `make native-probe`。这个独立探针用 `metal_fp4_e2m1_format` 输入执行 32×32 的 `matmul2d`，逐元素核对 GPU 输出。它不会改写 `results` 中的基准文件。`Apple10=yes` 说明设备声明 Apple GPU Family 10；最终以探针的编译、管线创建、GPU 执行和数值核对共同判断这条原生计算路径是否可用。系统升级本身不会把旧的 `metal3.2` 标量内核自动转换成 FP4 TensorOps。
+
+使用 FP4 TensorOps 的最小步骤见 `src/native_fp4_probe.metal` 和 `src/native_fp4_probe.mm`：以 `-std=metal4.1` 编译，包含 `<metal_tensor>` 与 `<MetalPerformancePrimitives/MetalPerformancePrimitives.h>`，用 `tensor<device metal_fp4_e2m1_format, ...>` 描述已打包的 FP4 数据，然后传给 `mpp::tensor_ops::matmul2d`。探针中每个 FP4 元素为 E2M1 编码 `0x2`（值 1），两个元素打包为一个 `0x22` 字节；行步长为 256 个元素，以满足 FP4 tensor 的对齐要求。此最小探针没有缩放平面；现有基准的每 32 值一个 FP16 缩放因子格式不能直接当作 Metal 27 的 FP8 E8M0 缩放平面，若要测量同样负载的原生量化矩阵乘法，需要先实现相应的数据转换与独立的数值验证。

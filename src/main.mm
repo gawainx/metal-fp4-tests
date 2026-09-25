@@ -294,7 +294,7 @@ int main(int argc, const char *argv[]) {
       return 1;
     }
     const bool apple7 = [device supportsFamily:MTLGPUFamilyApple7];
-    std::printf("[fp4] device=%s architecture=%s Apple7=%s native_fp4_sdk=%s\n", device.name.UTF8String,
+    std::printf("[fp4] device=%s architecture=%s Apple7=%s native_fp4_sdk=%s execution=software_scalar_decode\n", device.name.UTF8String,
                 machineArchitecture().c_str(), apple7 ? "yes" : "no", native_fp4_sdk.c_str());
     std::vector<Workload> workloads = {
         {"prefill_linear", 128, hidden_size, hidden_size},
@@ -310,8 +310,10 @@ int main(int argc, const char *argv[]) {
            << "    \"os_version\": \"" << jsonEscape(NSProcessInfo.processInfo.operatingSystemVersionString.UTF8String) << "\",\n"
            << "    \"apple_gpu_family_7_or_later\": " << (apple7 ? "true" : "false") << ",\n"
            << "    \"native_fp4_tensor_api_in_active_sdk\": " << (native_fp4_sdk == "available" ? "true" : "false") << ",\n"
-           << "    \"native_fp4_status\": \"" << (native_fp4_sdk == "available" ? "requires runtime tensor execution probe" : "active SDK lacks MTLTensorDataTypeMetalFloat4E2M1") << "\"\n  },\n"
-           << "  \"implementation\": \"software_fallback_packed_e2m1_block32_with_fp16_activations\",\n  \"workloads\": [\n";
+           << "    \"native_fp4_status\": \"" << (native_fp4_sdk == "available" ? "SDK declaration present; native execution not implemented" : "active SDK lacks MTLTensorDataTypeMetalFloat4E2M1") << "\"\n  },\n"
+           << "  \"implementation\": \"software_fallback_packed_e2m1_block32_with_fp16_activations\",\n"
+           << "  \"execution_backend\": \"software_scalar_decode\",\n"
+           << "  \"measured_iterations\": " << iterations << ",\n  \"workloads\": [\n";
     for (size_t workload_index = 0; workload_index < workloads.size(); ++workload_index) {
       const Workload &workload = workloads[workload_index];
       std::vector<float> activations(static_cast<size_t>(workload.m) * workload.k);
