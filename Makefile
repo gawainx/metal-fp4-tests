@@ -11,7 +11,7 @@ NATIVE_COMPARE_LIB := $(BUILD_DIR)/fp4_native.metallib
 SOFTWARE_COMPARE_AIR := $(BUILD_DIR)/fp4_software_decode.air
 SOFTWARE_COMPARE_LIB := $(BUILD_DIR)/fp4_software_decode.metallib
 
-.PHONY: all run native-probe compare clean
+.PHONY: all run native-probe compare package clean
 
 all: $(BENCHMARK) $(METAL_LIB)
 
@@ -56,6 +56,9 @@ $(COMPARE): src/compare_fp4.mm | $(BUILD_DIR)
 
 compare: $(COMPARE) $(NATIVE_COMPARE_LIB) $(SOFTWARE_COMPARE_LIB)
 	./$(COMPARE)
+
+package: $(COMPARE) $(NATIVE_COMPARE_LIB) $(SOFTWARE_COMPARE_LIB)
+	./scripts/package_release.sh
 
 run: all
 	./scripts/build_and_run.sh

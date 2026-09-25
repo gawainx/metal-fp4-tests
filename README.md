@@ -19,3 +19,5 @@
 运行 `make compare`，结果写入 `results/fp4_native_vs_software_<芯片型号>.json`。两份独立的计算代码分别是 `src/fp4_native.metal`（Metal 4.1 TensorOps 原生 FP4）和 `src/fp4_software_decode.metal`（逐元素软件解码 FP4）。对照程序为两条路径传入完全相同的打包 E2M1 权重、FP16 激活和矩阵形状，交替执行，每条路径预热 3 次并记录 30 次 `GPUStartTime` 到 `GPUEndTime` 的 GPU 计算耗时。结果还核对两条 GPU 输出及独立 CPU 参考值。
 
 这组对照使用无缩放平面的 E2M1 数据，比较的是相同计算任务下的原生 FP4 消费与软件解码耗时；它不复用上文旧基准的 FP16 block32 缩放权重，因此不能把两组文件中的耗时直接配对计算速度比。
+
+macOS 27 Apple Silicon 用户可从 GitHub Release 下载 `metal-fp4-compare-macos27-arm64.tar.gz`，解压后运行 `./run.sh`，无需安装 Xcode。源码构建者可执行 `make package` 生成相同结构的发布包与 SHA-256 校验文件；包内使用说明见 `RELEASE.md`。
