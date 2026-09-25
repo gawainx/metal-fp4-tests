@@ -27,6 +27,13 @@ struct Timing {
   double max_ms;
 };
 
+struct ComparisonRow {
+  const char *name;
+  Shape shape;
+  Timing native;
+  Timing software;
+};
+
 static float decodeE2M1(uint8_t code) {
   constexpr float values[] = {0.0f, 0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 6.0f};
   const float magnitude = values[code & 7u];
@@ -95,6 +102,7 @@ int main() {
     constexpr int repetitions = 30;
     const Shape shapes[] = {{128, 1024, 1024}, {32, 1024, 3072}};
     const char *names[] = {"prefill_linear", "qkv_projection"};
+    std::vector<ComparisonRow> rows;
     std::ostringstream report;
     report << std::fixed << std::setprecision(6);
     report << "{\n  \"device\": \"" << device.name.UTF8String
@@ -164,6 +172,7 @@ int main() {
       }
       const Timing native = summarize(native_samples);
       const Timing software = summarize(software_samples);
+      rows.push_back({names[workload], shape, native, software});
       report << "    {\"name\": \"" << names[workload] << "\", \"m\": " << shape.m
              << ", \"k\": " << shape.k << ", \"n\": " << shape.n
              << ", \"native_fp4\": {\"mean_gpu_ms\": " << native.mean_ms
@@ -188,7 +197,19 @@ int main() {
       std::fprintf(stderr, "cannot write %s\n", path.c_str());
       return 1;
     }
-    std::printf("%s", report.str().c_str());
+    std::printf("GPU 计算耗时（%d 次平均）| %s\n", repetitions, device.name.UTF8String);
+    std::puts("+----------------+----------------+----------------+----------------+----------+");
+    std::puts("| Workload       | M x K x N      | Native FP4 ms  | Decode FP4 ms  | Native x |");
+    std::puts("+----------------+----------------+----------------+----------------+----------+");
+    for (const ComparisonRow &row : rows) {
+      char dimensions[32];
+      std::snprintf(dimensions, sizeof(dimensions), "%ux%ux%u", row.shape.m, row.shape.k, row.shape.n);
+      std::printf("| %-14s | %-14s | %14.6f | %14.6f | %8.2f |\n",
+                  row.name, dimensions, row.native.mean_ms, row.software.mean_ms,
+                  row.software.mean_ms / row.native.mean_ms);
+    }
+    std::puts("+----------------+----------------+----------------+----------------+----------+");
+    std::printf("Native x = 软件解码耗时 / 原生 FP4 耗时\nJSON 结果：%s\n", path.c_str());
     return 0;
   }
 }
