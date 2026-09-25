@@ -18,8 +18,11 @@ NATIVE_COMPARE_AIR := $(BUILD_DIR)/fp4_native.air
 NATIVE_COMPARE_LIB := $(BUILD_DIR)/fp4_native.metallib
 SOFTWARE_COMPARE_AIR := $(BUILD_DIR)/fp4_software_decode.air
 SOFTWARE_COMPARE_LIB := $(BUILD_DIR)/fp4_software_decode.metallib
+TUNING_AIR := $(BUILD_DIR)/tune_tensorops.air
+TUNING_LIB := $(BUILD_DIR)/tune_tensorops.metallib
+TUNING_BENCHMARK := $(BUILD_DIR)/tune_tensorops
 
-.PHONY: all run native-probe compare cuda-build cuda-compare package clean
+.PHONY: all run native-probe compare tune-metal validate-tuned-metal cuda-build cuda-compare package clean
 
 NVCC ?= nvcc
 CUDA_COMPARE := $(BUILD_DIR)/compare_cuda_precisions
@@ -92,6 +95,21 @@ $(COMPARE): src/compare_precisions.mm | $(BUILD_DIR)
 
 compare: $(COMPARE) $(BF16_COMPARE_LIB) $(BF16_SOFTWARE_LIB) $(FP8_COMPARE_LIB) $(FP8_SOFTWARE_LIB) $(NATIVE_COMPARE_LIB) $(SOFTWARE_COMPARE_LIB)
 	./$(COMPARE)
+
+$(TUNING_AIR): src/tune_tensorops.metal | $(BUILD_DIR)
+	xcrun -sdk macosx metal -std=metal4.1 -c $< -o $@
+
+$(TUNING_LIB): $(TUNING_AIR)
+	xcrun -sdk macosx metallib $< -o $@
+
+$(TUNING_BENCHMARK): src/tune_tensorops.mm | $(BUILD_DIR)
+	xcrun -sdk macosx clang++ -std=c++20 -fobjc-arc -framework Foundation -framework Metal $< -o $@
+
+tune-metal: $(TUNING_BENCHMARK) $(TUNING_LIB)
+	./$(TUNING_BENCHMARK)
+
+validate-tuned-metal: $(TUNING_BENCHMARK) $(TUNING_LIB)
+	./$(TUNING_BENCHMARK) --selected
 
 $(CUDA_OVERLAY): patches/cutlass_sm120_fp4_shift.patch | $(BUILD_DIR)
 	@test -n "$(CUTLASS_DIR)" || { echo "Set CUTLASS_DIR to a CUTLASS checkout" >&2; exit 1; }

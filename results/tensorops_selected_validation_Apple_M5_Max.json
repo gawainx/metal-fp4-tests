@@ -1,0 +1,29 @@
+{
+  "device": "Apple M5 Max",
+  "input": "identical E2M1 values encoded as BF16, FP8 E4M3, FP4 E2M1",
+  "output": "FP32",
+  "warmup_iterations": 5,
+  "measured_iterations_per_kernel": 40,
+  "workloads": [
+    {"name": "prefill_linear", "m": 128, "k": 1024, "n": 1024, "candidates": [
+      {"name": "bf16_m32n128_s4", "format": "bf16", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.070483, "p50_gpu_ms": 0.071542, "min_gpu_ms": 0.050250, "max_gpu_ms": 0.078625, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp8_m32n128_s4", "format": "fp8", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.070503, "p50_gpu_ms": 0.069458, "min_gpu_ms": 0.048667, "max_gpu_ms": 0.120708, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp4_m32n128_s4", "format": "fp4", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.098364, "p50_gpu_ms": 0.098708, "min_gpu_ms": 0.069208, "max_gpu_ms": 0.128000, "max_sampled_cpu_reference_error": 0.000000}
+    ]},
+    {"name": "qkv_projection", "m": 32, "k": 1024, "n": 3072, "candidates": [
+      {"name": "bf16_m32n128_s4", "format": "bf16", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.045826, "p50_gpu_ms": 0.071750, "min_gpu_ms": 0.016750, "max_gpu_ms": 0.083708, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp8_m32n128_s4", "format": "fp8", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.044247, "p50_gpu_ms": 0.069750, "min_gpu_ms": 0.016000, "max_gpu_ms": 0.078875, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp4_m32n128_s4", "format": "fp4", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.064671, "p50_gpu_ms": 0.033708, "min_gpu_ms": 0.023250, "max_gpu_ms": 0.252458, "max_sampled_cpu_reference_error": 0.000000}
+    ]},
+    {"name": "large_prefill", "m": 512, "k": 1024, "n": 2048, "candidates": [
+      {"name": "bf16_m32n64_s1", "format": "bf16", "tile_m": 32, "tile_n": 64, "simdgroups": 1, "block_k": 1024, "mean_gpu_ms": 0.078597, "p50_gpu_ms": 0.055000, "min_gpu_ms": 0.040375, "max_gpu_ms": 0.195000, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp8_m32n128_s4", "format": "fp8", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.078566, "p50_gpu_ms": 0.056333, "min_gpu_ms": 0.041333, "max_gpu_ms": 0.199208, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp4_m32n32_s1", "format": "fp4", "tile_m": 32, "tile_n": 32, "simdgroups": 1, "block_k": 1024, "mean_gpu_ms": 0.088790, "p50_gpu_ms": 0.065708, "min_gpu_ms": 0.047875, "max_gpu_ms": 0.232000, "max_sampled_cpu_reference_error": 0.000000}
+    ]},
+    {"name": "wide_projection", "m": 32, "k": 1024, "n": 8192, "candidates": [
+      {"name": "bf16_m32n128_s4", "format": "bf16", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.043401, "p50_gpu_ms": 0.021250, "min_gpu_ms": 0.019875, "max_gpu_ms": 0.093333, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp8_m32n128_s4", "format": "fp8", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.039739, "p50_gpu_ms": 0.020375, "min_gpu_ms": 0.018500, "max_gpu_ms": 0.087250, "max_sampled_cpu_reference_error": 0.000000},
+      {"name": "fp4_m32n128_s4", "format": "fp4", "tile_m": 32, "tile_n": 128, "simdgroups": 4, "block_k": 1024, "mean_gpu_ms": 0.058292, "p50_gpu_ms": 0.025667, "min_gpu_ms": 0.023875, "max_gpu_ms": 0.215083, "max_sampled_cpu_reference_error": 0.000000}
+    ]}
+  ]
+}
