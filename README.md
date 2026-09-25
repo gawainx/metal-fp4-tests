@@ -25,3 +25,15 @@ make compare
 ```
 
 命令会构建并运行程序，结果显示在终端，并保存到 `results/precision_comparison_<芯片型号>.json`。
+
+## CUDA BF16、FP8、FP4 对照
+
+在 SM120 GPU 上，使用已安装的 CUDA Toolkit、cuBLAS 和 CUTLASS 运行：
+
+```sh
+make cuda-compare NVCC=/usr/local/cuda/bin/nvcc CUTLASS_DIR=/path/to/cutlass
+```
+
+程序对齐 Metal 用例的两个矩阵形状和随机输入值，分别运行 BF16、FP8 E4M3 与 FP4 E2M1 GEMM。输入值都可由三种格式精确表示，三条路径使用 FP32 累加与输出。BF16 使用 cuBLAS，FP8 和不带缩放平面的 FP4 使用 CUTLASS SM120 Tensor Core 内核。CUDA event 记录每次 GPU 耗时，先预热 3 次，再测量 30 次；每种输出都与 CPU 参考值逐元素比较。终端显示平均耗时与 `BF16 耗时 / 低精度耗时`，JSON 保存在 `results/precision_comparison_NVIDIA_RTX_PRO_4500_Blackwell.json`。
+
+本次验证使用 CUTLASS `v4.5.0-15-g1fc71b3e`。构建时会在 `build/cutlass-overlay` 中复制并修正该版本的 SM120 FP4 装载移位头文件；CUTLASS 原始检出、CUDA Toolkit 和驱动均不会被修改。

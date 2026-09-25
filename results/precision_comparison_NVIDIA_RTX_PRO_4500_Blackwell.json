@@ -1,0 +1,12 @@
+{
+  "device": "NVIDIA RTX PRO 4500 Blackwell",
+  "comparison": "cuda_bf16_fp8_e4m3_fp4_e2m1_gemm",
+  "input": "identical E2M1 values exactly representable in all three formats; no scale plane",
+  "accumulator": "FP32",
+  "warmup_iterations": 3,
+  "measured_iterations_per_kernel": 30,
+  "workloads": [
+    {"name": "prefill_linear", "m": 128, "k": 1024, "n": 1024, "bf16": {"mean_gpu_ms": 0.011076, "p50_gpu_ms": 0.011200, "min_gpu_ms": 0.009120, "max_gpu_ms": 0.012416}, "fp8_e4m3": {"mean_gpu_ms": 0.009047, "p50_gpu_ms": 0.008864, "min_gpu_ms": 0.007936, "max_gpu_ms": 0.010432}, "fp4_e2m1": {"mean_gpu_ms": 0.008646, "p50_gpu_ms": 0.008384, "min_gpu_ms": 0.007456, "max_gpu_ms": 0.010432}, "speedup_vs_bf16": {"fp8_e4m3": 1.224240, "fp4_e2m1": 1.281026}, "max_cpu_reference_error": {"bf16": 0.000000, "fp8_e4m3": 0.000000, "fp4_e2m1": 0.000000}},
+    {"name": "qkv_projection", "m": 32, "k": 1024, "n": 3072, "bf16": {"mean_gpu_ms": 0.010466, "p50_gpu_ms": 0.011072, "min_gpu_ms": 0.009024, "max_gpu_ms": 0.011840}, "fp8_e4m3": {"mean_gpu_ms": 0.011631, "p50_gpu_ms": 0.012128, "min_gpu_ms": 0.010176, "max_gpu_ms": 0.015072}, "fp4_e2m1": {"mean_gpu_ms": 0.009983, "p50_gpu_ms": 0.010240, "min_gpu_ms": 0.008352, "max_gpu_ms": 0.010464}, "speedup_vs_bf16": {"fp8_e4m3": 0.899853, "fp4_e2m1": 1.048403}, "max_cpu_reference_error": {"bf16": 0.000000, "fp8_e4m3": 0.000000, "fp4_e2m1": 0.000000}}
+  ]
+}

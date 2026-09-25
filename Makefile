@@ -19,7 +19,11 @@ NATIVE_COMPARE_LIB := $(BUILD_DIR)/fp4_native.metallib
 SOFTWARE_COMPARE_AIR := $(BUILD_DIR)/fp4_software_decode.air
 SOFTWARE_COMPARE_LIB := $(BUILD_DIR)/fp4_software_decode.metallib
 
-.PHONY: all run native-probe compare package clean
+.PHONY: all run native-probe compare cuda-build cuda-compare package clean
+
+NVCC ?= nvcc
+CUDA_COMPARE := $(BUILD_DIR)/compare_cuda_precisions
+CUDA_OVERLAY := $(BUILD_DIR)/cutlass-overlay/cute/atom/mma_traits_sm120.hpp
 
 all: $(BENCHMARK) $(METAL_LIB)
 
@@ -88,6 +92,20 @@ $(COMPARE): src/compare_precisions.mm | $(BUILD_DIR)
 
 compare: $(COMPARE) $(BF16_COMPARE_LIB) $(BF16_SOFTWARE_LIB) $(FP8_COMPARE_LIB) $(FP8_SOFTWARE_LIB) $(NATIVE_COMPARE_LIB) $(SOFTWARE_COMPARE_LIB)
 	./$(COMPARE)
+
+$(CUDA_OVERLAY): patches/cutlass_sm120_fp4_shift.patch | $(BUILD_DIR)
+	@test -n "$(CUTLASS_DIR)" || { echo "Set CUTLASS_DIR to a CUTLASS checkout" >&2; exit 1; }
+	mkdir -p $(dir $@)
+	cp $(CUTLASS_DIR)/include/cute/atom/mma_traits_sm120.hpp $@
+	patch -s $@ patches/cutlass_sm120_fp4_shift.patch
+
+$(CUDA_COMPARE): src/compare_cuda_precisions.cu $(CUDA_OVERLAY)
+	$(NVCC) -std=c++20 -O3 -arch=sm_120a -w -I$(BUILD_DIR)/cutlass-overlay -I$(CUTLASS_DIR)/include -I$(CUTLASS_DIR)/tools/util/include $< -lcublas -o $@
+
+cuda-build: $(CUDA_COMPARE)
+
+cuda-compare: $(CUDA_COMPARE)
+	./$(CUDA_COMPARE)
 
 package: $(COMPARE) $(BF16_COMPARE_LIB) $(BF16_SOFTWARE_LIB) $(FP8_COMPARE_LIB) $(FP8_SOFTWARE_LIB) $(NATIVE_COMPARE_LIB) $(SOFTWARE_COMPARE_LIB)
 	./scripts/package_release.sh

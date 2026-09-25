@@ -1,0 +1,19 @@
+--- mma_traits_sm120.hpp
++++ mma_traits_sm120.hpp
+@@ -221,6 +221,7 @@
+                         SM120_16x8x32_TN<AType, BType, MMAArgs ...>::ARegisters>::type;
+   if constexpr (cute::is_same_v<AType, cutlass::float_e2m1_t>) {
+-    cute::transform(recast<RegisterTypeA>(tensor), [](RegisterTypeA& v){ return v << 2; });
++    auto registers = recast<RegisterTypeA>(tensor);
++    for (int i = 0; i < cute::size(registers); ++i) registers(i) <<= 2;
+   }
+ }
+ template<class AType, class BType, class... MMAArgs, class Tensor>
+@@ -232,5 +233,6 @@
+                         SM120_16x8x32_TN<AType, BType, MMAArgs ...>::BRegisters>::type;
+   if constexpr (cute::is_same_v<BType, cutlass::float_e2m1_t>) {
+-    cute::transform(recast<RegisterTypeB>(tensor), [](RegisterTypeB& v){ return v << 2; });
++    auto registers = recast<RegisterTypeB>(tensor);
++    for (int i = 0; i < cute::size(registers); ++i) registers(i) <<= 2;
+   }
+ }
