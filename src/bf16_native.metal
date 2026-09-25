@@ -1,6 +1,5 @@
 #include <metal_stdlib>
 #include <metal_tensor>
-#include <metal_packed_numeric>
 #include <MetalPerformancePrimitives/MetalPerformancePrimitives.h>
 
 using namespace metal;
@@ -12,17 +11,16 @@ struct Shape {
   uint n;
 };
 
-// Both operands use the same packed E2M1 values as the other precision paths.
-kernel void fp4_native_matmul(device uchar *activations [[buffer(0)]],
-                              device uchar *packed_weights [[buffer(1)]],
-                              device float *output [[buffer(2)]],
-                              constant Shape &shape [[buffer(3)]],
-                              uint2 tile [[threadgroup_position_in_grid]]) {
-  tensor<device metal_fp4_e2m1_format, dextents<int, 2>, tensor_inline> a(
+kernel void bf16_native_matmul(device bfloat *activations [[buffer(0)]],
+                               device bfloat *weights [[buffer(1)]],
+                               device float *output [[buffer(2)]],
+                               constant Shape &shape [[buffer(3)]],
+                               uint2 tile [[threadgroup_position_in_grid]]) {
+  tensor<device bfloat, dextents<int, 2>, tensor_inline> a(
       activations, dextents<int, 2>(int(shape.k), int(shape.m)),
       array<int, 2>({1, int(shape.k)}));
-  tensor<device metal_fp4_e2m1_format, dextents<int, 2>, tensor_inline> b(
-      packed_weights, dextents<int, 2>(int(shape.n), int(shape.k)),
+  tensor<device bfloat, dextents<int, 2>, tensor_inline> b(
+      weights, dextents<int, 2>(int(shape.n), int(shape.k)),
       array<int, 2>({1, int(shape.n)}));
   tensor<device float, dextents<int, 2>, tensor_inline> c(
       output, dextents<int, 2>(int(shape.n), int(shape.m)),

@@ -1,0 +1,11 @@
+{
+  "device": "Apple M1 Max",
+  "comparison": "paired_native_vs_software_bf16_fp8_fp4",
+  "input": "identical values exactly representable in BF16, FP8 E4M3 and FP4 E2M1; no scale plane",
+  "warmup_iterations": 3,
+  "measured_iterations_per_kernel": 30,
+  "workloads": [
+    {"name": "prefill_linear", "m": 128, "k": 1024, "n": 1024, "bf16_native": {"mean_gpu_ms": 0.339172, "p50_gpu_ms": 0.338333, "min_gpu_ms": 0.223500, "max_gpu_ms": 0.429875}, "bf16_software": {"mean_gpu_ms": 1.067829, "p50_gpu_ms": 1.070667, "min_gpu_ms": 0.733875, "max_gpu_ms": 1.373125}, "fp8_native": {"mean_gpu_ms": 0.134293, "p50_gpu_ms": 0.137125, "min_gpu_ms": 0.086917, "max_gpu_ms": 0.154250}, "fp8_software": {"mean_gpu_ms": 2.414767, "p50_gpu_ms": 2.517917, "min_gpu_ms": 1.678042, "max_gpu_ms": 2.534250}, "fp4_native": {"mean_gpu_ms": 0.138781, "p50_gpu_ms": 0.144000, "min_gpu_ms": 0.091375, "max_gpu_ms": 0.153708}, "fp4_software": {"mean_gpu_ms": 2.282857, "p50_gpu_ms": 2.381000, "min_gpu_ms": 1.586875, "max_gpu_ms": 2.387333}, "max_cpu_reference_error": {"bf16_native": 0.000000, "bf16_software": 0.000000, "fp8_native": 0.000000, "fp8_software": 0.000002, "fp4_native": 0.000000, "fp4_software": 0.000000}},
+    {"name": "qkv_projection", "m": 32, "k": 1024, "n": 3072, "bf16_native": {"mean_gpu_ms": 0.195699, "p50_gpu_ms": 0.189083, "min_gpu_ms": 0.179000, "max_gpu_ms": 0.344167}, "bf16_software": {"mean_gpu_ms": 0.318926, "p50_gpu_ms": 0.310125, "min_gpu_ms": 0.288083, "max_gpu_ms": 0.514625}, "fp8_native": {"mean_gpu_ms": 0.076590, "p50_gpu_ms": 0.072708, "min_gpu_ms": 0.070083, "max_gpu_ms": 0.139458}, "fp8_software": {"mean_gpu_ms": 1.019361, "p50_gpu_ms": 0.985167, "min_gpu_ms": 0.977750, "max_gpu_ms": 1.981333}, "fp4_native": {"mean_gpu_ms": 0.078440, "p50_gpu_ms": 0.075958, "min_gpu_ms": 0.073250, "max_gpu_ms": 0.149708}, "fp4_software": {"mean_gpu_ms": 0.982190, "p50_gpu_ms": 0.951458, "min_gpu_ms": 0.944625, "max_gpu_ms": 1.885875}, "max_cpu_reference_error": {"bf16_native": 0.000000, "bf16_software": 0.000000, "fp8_native": 0.000000, "fp8_software": 0.000004, "fp4_native": 0.000000, "fp4_software": 0.000000}}
+  ]
+}
