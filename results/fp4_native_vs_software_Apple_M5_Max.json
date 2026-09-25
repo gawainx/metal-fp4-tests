@@ -1,0 +1,11 @@
+{
+  "device": "Apple M5 Max",
+  "comparison": "native_fp4_tensorops_vs_software_fp4_decode",
+  "input": "identical packed E2M1 weights and FP16 activations; no scale plane",
+  "warmup_iterations": 3,
+  "measured_iterations_per_kernel": 30,
+  "workloads": [
+    {"name": "prefill_linear", "m": 128, "k": 1024, "n": 1024, "native_fp4": {"mean_gpu_ms": 0.050311, "p50_gpu_ms": 0.035625, "min_gpu_ms": 0.026292, "max_gpu_ms": 0.090750}, "software_fp4": {"mean_gpu_ms": 1.223350, "p50_gpu_ms": 0.892125, "min_gpu_ms": 0.698583, "max_gpu_ms": 1.999500}, "software_over_native_time_ratio": 24.315701, "max_output_abs_difference": 0.000000, "max_cpu_reference_error": 0.000000},
+    {"name": "qkv_projection", "m": 32, "k": 1024, "n": 3072, "native_fp4": {"mean_gpu_ms": 0.026707, "p50_gpu_ms": 0.018792, "min_gpu_ms": 0.017625, "max_gpu_ms": 0.084708}, "software_fp4": {"mean_gpu_ms": 0.600732, "p50_gpu_ms": 0.445375, "min_gpu_ms": 0.413750, "max_gpu_ms": 1.813750}, "software_over_native_time_ratio": 22.493471, "max_output_abs_difference": 0.000000, "max_cpu_reference_error": 0.000000}
+  ]
+}
